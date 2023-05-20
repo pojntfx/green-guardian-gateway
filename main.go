@@ -72,13 +72,27 @@ func main() {
 		panic(err)
 	}
 
-	topic := path.Join("/gateways", *thingName, "messages")
+	publishTopic := path.Join("/gateways", *thingName, "messages")
 
-	if token := client.Publish(topic, 0, false, b); token.Wait() && token.Error() != nil {
-		panic(err)
+	if token := client.Publish(publishTopic, 0, false, b); token.Wait() && token.Error() != nil {
+		panic(token.Error())
 	}
 
-	log.Printf("Sent %s to %v", b, topic)
+	log.Printf("Sent %s to %v", b, publishTopic)
+
+	subscribeTopic := path.Join("/gateways", *thingName, "actions")
+
+	log.Println("Subscribed to messages from", subscribeTopic)
+
+	if token := client.Subscribe(
+		subscribeTopic,
+		0,
+		func(client mqtt.Client, msg mqtt.Message) {
+			log.Printf("Received %s from %s", msg.Payload(), msg.Topic())
+		},
+	); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
 
 	select {}
 }

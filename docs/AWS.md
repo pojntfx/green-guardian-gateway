@@ -19,6 +19,16 @@ aws iot create-policy --policy-name 'GreenGuardianGateway' --policy-document "$(
       "Effect": "Allow",
       "Action": "iot:Publish",
       "Resource": "arn:aws:iot:eu-north-1:856591169022:topic//gateways/${iot:Connection.Thing.ThingName}/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Subscribe",
+      "Resource": "arn:aws:iot:eu-north-1:856591169022:topicfilter//gateways/${iot:Connection.Thing.ThingName}/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Receive",
+      "Resource": "arn:aws:iot:eu-north-1:856591169022:topic//gateways/${iot:Connection.Thing.ThingName}/*"
     }
   ]
 }
