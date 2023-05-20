@@ -11,10 +11,9 @@ import (
 	"path/filepath"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/google/uuid"
 )
 
-type greeting struct {
+type greetings struct {
 	Message string `json:"message"`
 }
 
@@ -54,7 +53,7 @@ func main() {
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(*endpoint)
-	opts.SetClientID(uuid.New().String()[:22])
+	opts.SetClientID(*thingName)
 	opts.SetTLSConfig(tlsConfig)
 
 	client := mqtt.NewClient(opts)
@@ -66,14 +65,14 @@ func main() {
 
 	log.Println("Connected to", *endpoint)
 
-	b, err := json.Marshal(greeting{
+	b, err := json.Marshal(greetings{
 		Message: "Hello, world!",
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	topic := path.Join("/gateways", *thingName, "greetings")
+	topic := path.Join("/gateways", *thingName, "messages")
 
 	if token := client.Publish(topic, 0, false, b); token.Wait() && token.Error() != nil {
 		panic(err)

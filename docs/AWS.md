@@ -6,28 +6,19 @@ export AWS_PROFILE='GreenGuardianAdministrator-856591169022'
 rm -rf crypto
 mkdir -p crypto
 
-aws iot create-policy --policy-name 'GreenGuardianGatewayConnect' --policy-document "$(cat <<'EOF'
+aws iot create-policy --policy-name 'GreenGuardianGateway' --policy-document "$(cat <<'EOF'
 {
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
       "Action": "iot:Connect",
-      "Resource": "*"
-    }
-  ]
-}
-EOF
-)"
-
-aws iot create-policy --policy-name 'GreenGuardianGatewayPublish' --policy-document "$(cat <<'EOF'
-{
-  "Version": "2012-10-17",
-  "Statement": [
+      "Resource": "arn:aws:iot:eu-north-1:856591169022:client/${iot:Connection.Thing.ThingName}"
+    },
     {
       "Effect": "Allow",
       "Action": "iot:Publish",
-      "Resource": "arn:aws:iot:eu-north-1:856591169022:topic/gateways/${iot:Connection.Thing.ThingName}/*"
+      "Resource": "arn:aws:iot:eu-north-1:856591169022:topic//gateways/${iot:Connection.Thing.ThingName}/*"
     }
   ]
 }
@@ -38,9 +29,8 @@ aws iot create-thing --thing-name 'GreenGuardianGateway1'
 
 aws iot create-keys-and-certificate --set-as-active --certificate-pem-outfile 'crypto/aws.crt' --private-key-outfile 'crypto/aws.key'
 
-aws iot attach-policy --policy-name 'GreenGuardianGatewayConnect' --target 'arn:aws:iot:eu-north-1:856591169022:cert/1bea93461bad943ca994d8d7b44a67e973239b52e7048ec0f3a8b59250999e16'
-aws iot attach-policy --policy-name 'GreenGuardianGatewayPublish' --target 'arn:aws:iot:eu-north-1:856591169022:cert/1bea93461bad943ca994d8d7b44a67e973239b52e7048ec0f3a8b59250999e16'
-aws iot attach-thing-principal --thing-name 'GreenGuardianGateway1' --principal 'arn:aws:iot:eu-north-1:856591169022:cert/1bea93461bad943ca994d8d7b44a67e973239b52e7048ec0f3a8b59250999e16'
+aws iot attach-policy --policy-name 'GreenGuardianGateway' --target 'arn:aws:iot:eu-north-1:856591169022:cert/feba75e6868feeed83897eb322b8b47ab656fc2a6c761b66bebbac60e312d2ae'
+aws iot attach-thing-principal --thing-name 'GreenGuardianGateway1' --principal 'arn:aws:iot:eu-north-1:856591169022:cert/feba75e6868feeed83897eb322b8b47ab656fc2a6c761b66bebbac60e312d2ae'
 
 curl 'https://www.amazontrust.com/repository/AmazonRootCA1.pem' > 'crypto/aws-ca.pem'
 
