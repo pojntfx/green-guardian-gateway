@@ -1,6 +1,6 @@
-# Green Guardian Gateway
+# GreenGuardian Gateway
 
-Serial to MQTT/AWS IoT Gateway component for the GreenGuardian project.
+Serial to AWS IoT Gateway for GreenGuardian, a uni project for the HdM IoT course.
 
 ## Overview
 
@@ -8,6 +8,6 @@ Serial to MQTT/AWS IoT Gateway component for the GreenGuardian project.
 
 ## License
 
-Green Guardian Gateway (c) 2023 Felicitas Pojtinger and contributors
+GreenGuardian Gateway (c) 2023 Felicitas Pojtinger and contributors
 
 SPDX-License-Identifier: AGPL-3.0
