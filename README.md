@@ -1,6 +1,6 @@
 # GreenGuardian Gateway
 
-Serial to AWS IoT Gateway for GreenGuardian, a uni project for the HdM IoT course.
+AWS IoT Gateway for GreenGuardian, a uni project for the HdM IoT course.
 
 ## Overview
 
