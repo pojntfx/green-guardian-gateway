@@ -1,21 +1,21 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
 	"flag"
 	"log"
+	"net"
 	"os"
-	"path"
 	"path/filepath"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pojntfx/dudirekta/pkg/rpc"
+	"github.com/pojntfx/green-guardian-gateway/pkg/services"
+	"github.com/pojntfx/r3map/pkg/utils"
 )
-
-type greetings struct {
-	Message string `json:"message"`
-}
 
 func main() {
 	pwd, err := os.Getwd()
@@ -25,6 +25,8 @@ func main() {
 
 	crypto := filepath.Join(pwd, "crypto")
 
+	laddr := flag.String("laddr", ":1337", "Listen address")
+	verbose := flag.Bool("verbose", false, "Whether to enable verbose logging")
 	awsKey := flag.String("aws-key", filepath.Join(crypto, "aws.key"), "AWS mTLS secret key")
 	awsCert := flag.String("aws-cert", filepath.Join(crypto, "aws.crt"), "AWS mTLS certificate")
 	awsCA := flag.String("aws-ca", filepath.Join(crypto, "aws-ca.pem"), "AWS mTLS CA")
@@ -32,6 +34,9 @@ func main() {
 	thingName := flag.String("thing-name", "GreenGuardianGateway1", "Thing name (for topic to publish too; invalid thing names are denied using the )")
 
 	flag.Parse()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	cert, err := tls.LoadX509KeyPair(*awsCert, *awsKey)
 	if err != nil {
@@ -65,34 +70,88 @@ func main() {
 
 	log.Println("Connected to", *endpoint)
 
-	b, err := json.Marshal(greetings{
-		Message: "Hello, world!",
-	})
+	gateway := services.NewGateway(
+		*verbose,
+		ctx,
+		client,
+		*thingName,
+	)
+
+	errs := make(chan error)
+	go func() {
+		if err := services.WaitGateway(gateway); err != nil {
+			errs <- err
+		}
+	}()
+
+	if err := services.OpenGateway(gateway, ctx); err != nil {
+		panic(err)
+	}
+	defer services.CloseGateway(gateway)
+
+	clients := 0
+	registry := rpc.NewRegistry(
+		gateway,
+		services.HubRemote{},
+
+		time.Second*10,
+		ctx,
+		&rpc.Options{
+			ResponseBufferLen: rpc.DefaultResponseBufferLen,
+			OnClientConnect: func(remoteID string) {
+				clients++
+
+				log.Printf("%v clients connected", clients)
+			},
+			OnClientDisconnect: func(remoteID string) {
+				clients--
+
+				log.Printf("%v clients connected", clients)
+			},
+		},
+	)
+	gateway.Peers = registry.Peers
+
+	lis, err := net.Listen("tcp", *laddr)
 	if err != nil {
 		panic(err)
 	}
+	defer lis.Close()
 
-	publishTopic := path.Join("/gateways", *thingName, "messages")
+	log.Println("Listening on", lis.Addr())
 
-	if token := client.Publish(publishTopic, 0, false, b); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+	go func() {
+		for {
+			conn, err := lis.Accept()
+			if err != nil {
+				if !utils.IsClosedErr(err) {
+					log.Println("could not accept connection, continuing:", err)
+				}
+
+				continue
+			}
+
+			go func() {
+				defer func() {
+					_ = conn.Close()
+
+					if err := recover(); err != nil {
+						if !utils.IsClosedErr(err.(error)) {
+							log.Printf("Client disconnected with error: %v", err)
+						}
+					}
+				}()
+
+				if err := registry.Link(conn); err != nil {
+					panic(err)
+				}
+			}()
+		}
+	}()
+
+	for err := range errs {
+		if err != nil {
+			panic(err)
+		}
 	}
-
-	log.Printf("Sent %s to %v", b, publishTopic)
-
-	subscribeTopic := path.Join("/gateways", *thingName, "actions")
-
-	log.Println("Subscribed to messages from", subscribeTopic)
-
-	if token := client.Subscribe(
-		subscribeTopic,
-		0,
-		func(client mqtt.Client, msg mqtt.Message) {
-			log.Printf("Received %s from %s", msg.Payload(), msg.Topic())
-		},
-	); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-
-	select {}
 }

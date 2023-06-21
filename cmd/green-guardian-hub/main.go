@@ -7,6 +7,8 @@ import (
 	"flag"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/pojntfx/dudirekta/pkg/rpc"
@@ -68,7 +70,7 @@ func main() {
 		temperatureSensorBindings[roomID] = it
 	}
 
-	hub := services.NewHub(*verbose, ctx, fanBindings, nil, *defaultTemperature, *measureInterval, *measureTimeout)
+	hub := services.NewHub(*verbose, ctx, fanBindings, temperatureSensorBindings, *defaultTemperature, *measureInterval, *measureTimeout)
 
 	ready := make(chan struct{})
 	registry := rpc.NewRegistry(
@@ -124,7 +126,21 @@ func main() {
 	if err := services.OpenHub(hub, ctx, peer); err != nil {
 		panic(err)
 	}
-	defer services.CloseHub(hub)
+
+	go func() {
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, os.Interrupt)
+
+		<-ch
+
+		if *verbose {
+			log.Println("Gracefully shutting down")
+		}
+
+		_ = services.CloseHub(hub, ctx, peer)
+
+		os.Exit(1)
+	}()
 
 	for err := range errs {
 		if err != nil {

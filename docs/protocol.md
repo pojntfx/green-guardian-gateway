@@ -30,7 +30,7 @@ A plant has one moisture sensor and one sprinkler.
 # Via TCP
 roomID: 1
 measurement: 24
-default: 20
+defaultValue: 20
 ```
 
 **Moisture Sensor**:
@@ -39,7 +39,7 @@ default: 20
 # Via TCP
 plantID: 1
 measurement: 65
-default: 50
+defaultValue: 50
 ```
 
 ### Actuators → Gateway
@@ -65,7 +65,7 @@ plantID: 1
 ```yaml
 # To MQTT channel: /gateways/<gatewayID>/rooms/<roomID>/temperature
 measurement: 24
-default: 20
+defaultValue: 20
 ```
 
 **Moisture Sensor**:
@@ -73,7 +73,7 @@ default: 20
 ```yaml
 # To MQTT channel: /gateways/<gatewayID>/plants/<plantID>/moisture
 measurement: 65
-default: 50
+defaultValue: 50
 ```
 
 ### Cloud → Gateway

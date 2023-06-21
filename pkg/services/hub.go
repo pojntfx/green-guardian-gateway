@@ -71,10 +71,10 @@ func NewHub(
 
 func (w *Hub) SetFanOn(ctx context.Context, roomID string, on bool) error {
 	if w.verbose {
-		log.Printf("SetFanOn(roomID=%v)", roomID)
+		log.Printf("SetFanOn(roomID=%v, on=%v)", roomID, on)
 	}
 
-	room, ok := w.fans[roomID]
+	fan, ok := w.fans[roomID]
 	if !ok {
 		return ErrNoSuchRoom
 	}
@@ -88,16 +88,16 @@ func (w *Hub) SetFanOn(ctx context.Context, roomID string, on bool) error {
 
 	req.Data = []byte{intensity, 255, 0, 0}
 
-	return room.Transmit(&req)
+	return fan.Transmit(&req)
 }
 
-func OpenHub(hub *Hub, ctx context.Context, peer *GatewayRemote) error {
+func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 	roomIDs := []string{}
 	for roomID := range hub.fans {
 		roomIDs = append(roomIDs, roomID)
 	}
 
-	if err := peer.RegisterFans(ctx, roomIDs); err != nil {
+	if err := gateway.RegisterFans(ctx, roomIDs); err != nil {
 		return err
 	}
 
@@ -127,7 +127,7 @@ func OpenHub(hub *Hub, ctx context.Context, peer *GatewayRemote) error {
 						return
 					}
 
-					if err := peer.ForwardTemperatureMeasurement(ctx, roomID, int(float32(binary.BigEndian.Uint32(res.Data[0:4]))/100.0), hub.defaultTemperature); err != nil {
+					if err := gateway.ForwardTemperatureMeasurement(ctx, roomID, int(float32(binary.BigEndian.Uint32(res.Data[0:4]))/100.0), hub.defaultTemperature); err != nil {
 						hub.errs <- err
 
 						return
@@ -154,10 +154,21 @@ func WaitHub(hub *Hub) error {
 	return nil
 }
 
-func CloseHub(hub *Hub) {
+func CloseHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
+	roomIDs := []string{}
+	for roomID := range hub.fans {
+		roomIDs = append(roomIDs, roomID)
+	}
+
+	if err := gateway.UnregisterFans(ctx, roomIDs); err != nil {
+		return err
+	}
+
 	hub.cancel()
 
 	close(hub.errs)
 
 	hub.workerWg.Wait()
+
+	return nil
 }

@@ -1,4 +1,6 @@
-# AWS Docs
+# GreenGuardian Demo
+
+## AWS Infrastructure
 
 ```shell
 export AWS_PROFILE='GreenGuardianAdministrator-856591169022'
@@ -45,4 +47,16 @@ aws iot attach-thing-principal --thing-name 'GreenGuardianGateway1' --principal 
 curl 'https://www.amazontrust.com/repository/AmazonRootCA1.pem' > 'crypto/aws-ca.pem'
 
 aws iot describe-endpoint --endpoint-type iot:Data-ATS
+```
+
+## Local Infrastructure
+
+```shell
+go run ./cmd/green-guardian-gateway/ --verbose
+```
+
+```shell
+# We need root permissions because we're accessing the a USB device
+# Be sure to plug in the IoT device beforeahand and consult `--help`
+go build -o /tmp/green-guardian-hub ./cmd/green-guardian-hub/ && sudo /tmp/green-guardian-hub --verbose
 ```
