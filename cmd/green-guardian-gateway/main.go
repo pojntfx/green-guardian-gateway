@@ -17,6 +17,16 @@ import (
 	"github.com/pojntfx/r3map/pkg/utils"
 )
 
+func getEnvOrDefault(key string, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		log.Printf("Using %v from environment", key)
+
+		return value
+	}
+
+	return defaultValue
+}
+
 func main() {
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -25,13 +35,13 @@ func main() {
 
 	crypto := filepath.Join(pwd, "crypto")
 
-	laddr := flag.String("laddr", ":1337", "Listen address")
+	laddr := flag.String("laddr", getEnvOrDefault("LADDR", ":1337"), "Listen address")
 	verbose := flag.Bool("verbose", false, "Whether to enable verbose logging")
-	awsKey := flag.String("aws-key", filepath.Join(crypto, "aws.key"), "AWS mTLS secret key")
-	awsCert := flag.String("aws-cert", filepath.Join(crypto, "aws.crt"), "AWS mTLS certificate")
-	awsCA := flag.String("aws-ca", filepath.Join(crypto, "aws-ca.pem"), "AWS mTLS CA")
-	endpoint := flag.String("endpoint", "ssl://a1ya5rmdywas0n-ats.iot.eu-north-1.amazonaws.com:8883", "AWS MQTT endpoint to connect to")
-	thingName := flag.String("thing-name", "GreenGuardianGateway1", "Thing name (for topic to publish too; invalid thing names are denied using the )")
+	awsKey := flag.String("aws-key", getEnvOrDefault("AWS_KEY", filepath.Join(crypto, "aws.key")), "AWS mTLS secret key")
+	awsCert := flag.String("aws-cert", getEnvOrDefault("AWS_CERT", filepath.Join(crypto, "aws.crt")), "AWS mTLS certificate")
+	awsCA := flag.String("aws-ca", getEnvOrDefault("AWS_CA", filepath.Join(crypto, "aws-ca.pem")), "AWS mTLS CA")
+	endpoint := flag.String("endpoint", getEnvOrDefault("ENDPOINT", "ssl://a1ya5rmdywas0n-ats.iot.eu-north-1.amazonaws.com:8883"), "AWS MQTT endpoint to connect to")
+	thingName := flag.String("thing-name", getEnvOrDefault("THING_NAME", "GreenGuardianGateway1"), "Thing name (for topic to publish too; invalid thing names are denied using the )")
 
 	flag.Parse()
 
