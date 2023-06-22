@@ -6,7 +6,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/pojntfx/dudirekta v0.5.0
 	github.com/pojntfx/r3map v0.0.0-20230620141005-54a60a495a1d
-	gitlab.mi.hdm-stuttgart.de/iotee/go-iotee v0.0.0-00010101000000-000000000000
+	gitlab.mi.hdm-stuttgart.de/iotee/go-iotee v0.9.0
 )
 
 require (
@@ -18,5 +18,3 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.8.0 // indirect
 )
-
-replace gitlab.mi.hdm-stuttgart.de/iotee/go-iotee => ./go-iotee

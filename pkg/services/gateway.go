@@ -17,9 +17,9 @@ type GatewayRemote struct {
 	UnregisterFans                func(ctx context.Context, roomIDs []string) error
 	ForwardTemperatureMeasurement func(ctx context.Context, roomID string, measurement, defaultValue int) error
 
-	// RegisterSprinklers         func(ctx context.Context, plantIDs []string) error
-	// UnregisterSprinklers       func(ctx context.Context, plantIDs []string) error
-	// ForwardMoistureMeasurement func(ctx context.Context, plantID string, measurement, defaultValue int) error
+	RegisterSprinklers         func(ctx context.Context, plantIDs []string) error
+	UnregisterSprinklers       func(ctx context.Context, plantIDs []string) error
+	ForwardMoistureMeasurement func(ctx context.Context, plantID string, measurement, defaultValue int) error
 }
 
 type Gateway struct {
@@ -32,6 +32,9 @@ type Gateway struct {
 
 	fans     map[string]string
 	fansLock sync.Mutex
+
+	sprinklers     map[string]string
+	sprinklersLock sync.Mutex
 
 	Peers func() map[string]HubRemote
 }
@@ -48,6 +51,8 @@ func NewGateway(
 		errs: make(chan error),
 
 		fans: map[string]string{},
+
+		sprinklers: map[string]string{},
 
 		broker:    broker,
 		thingName: thingName,
@@ -86,6 +91,38 @@ func (w *Gateway) UnregisterFans(ctx context.Context, roomIDs []string) error {
 	return nil
 }
 
+func (w *Gateway) RegisterSprinklers(ctx context.Context, roomIDs []string) error {
+	if w.verbose {
+		log.Printf("RegisterSprinklers(roomIDs=%v)", roomIDs)
+	}
+
+	peerID := rpc.GetRemoteID(ctx)
+
+	w.sprinklersLock.Lock()
+	defer w.sprinklersLock.Unlock()
+
+	for _, roomID := range roomIDs {
+		w.sprinklers[roomID] = peerID
+	}
+
+	return nil
+}
+
+func (w *Gateway) UnregisterSprinklers(ctx context.Context, roomIDs []string) error {
+	if w.verbose {
+		log.Printf("UnregisterSpriklers(roomIDs=%v)", roomIDs)
+	}
+
+	w.sprinklersLock.Lock()
+	defer w.sprinklersLock.Unlock()
+
+	for _, roomID := range roomIDs {
+		delete(w.sprinklers, roomID)
+	}
+
+	return nil
+}
+
 func (w *Gateway) ForwardTemperatureMeasurement(ctx context.Context, roomID string, measurement, defaultValue int) error {
 	if w.verbose {
 		log.Printf("ForwardTemperatureMeasurement(roomIDs=%v, measurement=%v, defaultValue=%v)", roomID, measurement, defaultValue)
@@ -119,10 +156,14 @@ func OpenGateway(gateway *Gateway, ctx context.Context) error {
 			gateway.fansLock.Lock()
 			defer gateway.fansLock.Unlock()
 
+			gateway.sprinklersLock.Lock()
+			defer gateway.sprinklersLock.Unlock()
+
 			basePath, _ := path.Split(msg.Topic())
 
 			roomID := path.Base(basePath)
 
+			// Check how to solve
 			peerID, ok := gateway.fans[roomID]
 			if !ok {
 				gateway.errs <- ErrNoSuchRoom
@@ -145,6 +186,19 @@ func OpenGateway(gateway *Gateway, ctx context.Context) error {
 			}
 
 			if err := hub.SetFanOn(ctx, roomID, fanState.On); err != nil {
+				gateway.errs <- err
+
+				return
+			}
+
+			sprinklerState := &mqttapi.FanState{}
+			if err := json.Unmarshal(msg.Payload(), &sprinklerState); err != nil {
+				gateway.errs <- err
+
+				return
+			}
+
+			if err := hub.SetSprinklerOn(ctx, roomID, fanState.On); err != nil {
 				gateway.errs <- err
 
 				return

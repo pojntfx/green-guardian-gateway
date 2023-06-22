@@ -26,10 +26,13 @@ func main() {
 	raddr := flag.String("raddr", "localhost:1337", "Remote address")
 	verbose := flag.Bool("verbose", false, "Whether to enable verbose logging")
 	defaultTemperature := flag.Int("default-temperature", 25, "The default expected temperature")
+	defaultMoisture := flag.Int("default-moisture", 30, "The default expected moisture")
 	measureInterval := flag.Duration("measure-interval", time.Second, "Amount of time after which a new measurement is taken")
 	measureTimeout := flag.Duration("measure-timeout", time.Second, "Amount of time after which it is assumed that a measurement has failed")
 	fans := flag.String("fans", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
 	temperatureSensors := flag.String("temperatureSensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
+	sprinklers := flag.String("sprinklers", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
+	moistureSensors := flag.String("moistureSensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
 
 	flag.Parse()
 
@@ -70,7 +73,41 @@ func main() {
 		temperatureSensorBindings[roomID] = it
 	}
 
-	hub := services.NewHub(*verbose, ctx, fanBindings, temperatureSensorBindings, *defaultTemperature, *measureInterval, *measureTimeout)
+	sprinklerDevices := map[string]string{}
+	if err := json.Unmarshal([]byte(*sprinklers), &sprinklerDevices); err != nil {
+		panic(err)
+	}
+
+	sprinklerBindings := map[string]*iotee.IoTee{}
+	for roomID, dev := range fanDevices {
+		it := iotee.NewIoTee(dev, *baud)
+
+		if err := it.Open(); err != nil {
+			panic(err)
+		}
+		defer it.Close()
+
+		sprinklerBindings[roomID] = it
+	}
+
+	moistureSensorDevices := map[string]string{}
+	if err := json.Unmarshal([]byte(*moistureSensors), &moistureSensorDevices); err != nil {
+		panic(err)
+	}
+
+	moistureSensorBindings := map[string]*iotee.IoTee{}
+	for roomID, dev := range moistureSensorDevices {
+		it := iotee.NewIoTee(dev, *baud)
+
+		if err := it.Open(); err != nil {
+			panic(err)
+		}
+		defer it.Close()
+
+		moistureSensorBindings[roomID] = it
+	}
+
+	hub := services.NewHub(*verbose, ctx, fanBindings, temperatureSensorBindings, *defaultTemperature, sprinklerBindings, moistureSensorBindings, *defaultMoisture, *measureInterval, *measureTimeout)
 
 	ready := make(chan struct{})
 	registry := rpc.NewRegistry(
