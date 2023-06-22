@@ -48,6 +48,8 @@ type Hub struct {
 	measureLock sync.Mutex
 
 	workerWg sync.WaitGroup
+
+	mock int
 }
 
 func NewHub(
@@ -64,6 +66,8 @@ func NewHub(
 
 	measureInterval,
 	measureTimeout time.Duration,
+
+	mock int,
 ) *Hub {
 	cancellableCtx, cancel := context.WithCancel(ctx)
 
@@ -87,6 +91,8 @@ func NewHub(
 
 		measureInterval: measureInterval,
 		measureTimeout:  measureTimeout,
+
+		mock: mock,
 	}
 }
 
@@ -142,6 +148,65 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 
 	if err := gateway.RegisterFans(ctx, roomIDs); err != nil {
 		return err
+	}
+
+	if hub.mock > 0 {
+		// When mocking, we treat all temperatures as the same
+		for roomID, temperatureSensor := range hub.temperatureSensors {
+			hub.workerWg.Add(1)
+
+			go temperatureSensor.RxPump()
+
+			go func(roomID string, temperatureSensor *iotee.IoTee) {
+				defer hub.workerWg.Done()
+
+				for {
+					select {
+					case <-hub.ctx.Done():
+						return
+
+					case msg := <-temperatureSensor.RxChan:
+						if msg.MsgType == iotee.MessageTypeButton {
+							switch msg.Data[0] {
+							// Top left
+							case 'B':
+								if err := gateway.ForwardTemperatureMeasurement(ctx, roomID, hub.defaultTemperature+hub.mock, hub.defaultTemperature); err != nil {
+									hub.errs <- err
+
+									return
+								}
+
+							// Bottom left
+							case 'Y':
+								if err := gateway.ForwardTemperatureMeasurement(ctx, roomID, hub.defaultTemperature-hub.mock, hub.defaultTemperature); err != nil {
+									hub.errs <- err
+
+									return
+								}
+
+							// Top right
+							case 'A':
+								if err := gateway.ForwardMoistureMeasurement(ctx, roomID, hub.defaultMoisture+hub.mock, hub.defaultMoisture); err != nil {
+									hub.errs <- err
+
+									return
+								}
+
+							// Bottom right
+							case 'X':
+								if err := gateway.ForwardMoistureMeasurement(ctx, roomID, hub.defaultMoisture-hub.mock, hub.defaultMoisture); err != nil {
+									hub.errs <- err
+
+									return
+								}
+							}
+						}
+					}
+				}
+			}(roomID, temperatureSensor)
+		}
+
+		return nil
 	}
 
 	for roomID, temperatureSensor := range hub.temperatureSensors {

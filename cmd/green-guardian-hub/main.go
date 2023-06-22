@@ -33,6 +33,7 @@ func main() {
 	temperatureSensors := flag.String("temperature-sensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
 	sprinklers := flag.String("sprinklers", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { plantID: devicePath }")
 	moistureSensors := flag.String("moisture-sensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
+	mock := flag.Int("mock", 0, "If set to >1, mock temperature and moisture using buttons, sending the default value +- the value of this flag")
 
 	flag.Parse()
 
@@ -121,6 +122,8 @@ func main() {
 
 		*measureInterval,
 		*measureTimeout,
+
+		*mock,
 	)
 
 	ready := make(chan struct{})
@@ -186,6 +189,17 @@ func main() {
 
 		if *verbose {
 			log.Println("Gracefully shutting down")
+
+			go func() {
+				ch := make(chan os.Signal, 1)
+				signal.Notify(ch, os.Interrupt)
+
+				<-ch
+
+				log.Println("Forcefully exiting")
+
+				os.Exit(1)
+			}()
 		}
 
 		_ = services.CloseHub(hub, ctx, peer)
