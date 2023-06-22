@@ -30,9 +30,9 @@ func main() {
 	measureInterval := flag.Duration("measure-interval", time.Second, "Amount of time after which a new measurement is taken")
 	measureTimeout := flag.Duration("measure-timeout", time.Second, "Amount of time after which it is assumed that a measurement has failed")
 	fans := flag.String("fans", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
-	temperatureSensors := flag.String("temperatureSensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
-	sprinklers := flag.String("sprinklers", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
-	moistureSensors := flag.String("moistureSensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
+	temperatureSensors := flag.String("temperature-sensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
+	sprinklers := flag.String("sprinklers", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { plantID: devicePath }")
+	moistureSensors := flag.String("moisture-sensors", `{"1": "/dev/ttyACM0"}`, "JSON description in the format { roomID: devicePath }")
 
 	flag.Parse()
 
@@ -107,7 +107,21 @@ func main() {
 		moistureSensorBindings[roomID] = it
 	}
 
-	hub := services.NewHub(*verbose, ctx, fanBindings, temperatureSensorBindings, *defaultTemperature, sprinklerBindings, moistureSensorBindings, *defaultMoisture, *measureInterval, *measureTimeout)
+	hub := services.NewHub(
+		*verbose,
+		ctx,
+
+		fanBindings,
+		temperatureSensorBindings,
+		*defaultTemperature,
+
+		sprinklerBindings,
+		moistureSensorBindings,
+		*defaultMoisture,
+
+		*measureInterval,
+		*measureTimeout,
+	)
 
 	ready := make(chan struct{})
 	registry := rpc.NewRegistry(

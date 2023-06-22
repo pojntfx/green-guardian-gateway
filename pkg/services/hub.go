@@ -12,7 +12,9 @@ import (
 )
 
 var (
-	ErrNoSuchRoom              = errors.New("no such room")
+	ErrNoSuchRoom  = errors.New("no such room")
+	ErrNoSuchPlant = errors.New("no such plant")
+
 	ErrTemperatureReadTimedOut = errors.New("temperature read timed out")
 	ErrMoistureReadTimedOut    = errors.New("moisture read timed out")
 )
@@ -43,18 +45,23 @@ type Hub struct {
 	measureInterval,
 	measureTimeout time.Duration
 
+	measureLock sync.Mutex
+
 	workerWg sync.WaitGroup
 }
 
 func NewHub(
 	verbose bool,
 	ctx context.Context,
+
 	fans map[string]*iotee.IoTee,
 	temperatureSensors map[string]*iotee.IoTee,
 	defaultTemperature int,
+
 	sprinklers map[string]*iotee.IoTee,
 	moistureSensors map[string]*iotee.IoTee,
 	defaultMoisture int,
+
 	measureInterval,
 	measureTimeout time.Duration,
 ) *Hub {
@@ -148,10 +155,14 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 				case <-hub.ctx.Done():
 					return
 				default:
+					hub.measureLock.Lock()
+
 					req := iotee.NewMessage(iotee.MessageTypeTempReq, 0)
 
 					if err := temperatureSensor.Transmit(&req); err != nil {
 						hub.errs <- err
+
+						hub.measureLock.Unlock()
 
 						return
 					}
@@ -160,8 +171,12 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 					if res == nil {
 						hub.errs <- ErrTemperatureReadTimedOut
 
+						hub.measureLock.Unlock()
+
 						return
 					}
+
+					hub.measureLock.Unlock()
 
 					if err := gateway.ForwardTemperatureMeasurement(ctx, roomID, int(float32(binary.BigEndian.Uint32(res.Data[0:4]))/100.0), hub.defaultTemperature); err != nil {
 						hub.errs <- err
@@ -179,10 +194,10 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 		return err
 	}
 
-	for roomID, moistureSensors := range hub.moistureSensors {
+	for plantID, moistureSensor := range hub.moistureSensors {
 		hub.workerWg.Add(1)
 
-		go func(roomID string, moistureSensors *iotee.IoTee) {
+		go func(plantID string, moistureSensor *iotee.IoTee) {
 			defer hub.workerWg.Done()
 
 			for {
@@ -190,22 +205,30 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 				case <-hub.ctx.Done():
 					return
 				default:
-					req := iotee.NewMessage(iotee.MessageTypeTempReq, 0)
+					hub.measureLock.Lock()
 
-					if err := moistureSensors.Transmit(&req); err != nil {
+					req := iotee.NewMessage(iotee.MessageTypeHumReq, 0)
+
+					if err := moistureSensor.Transmit(&req); err != nil {
 						hub.errs <- err
+
+						hub.measureLock.Unlock()
 
 						return
 					}
 
-					res := moistureSensors.ReceiveWithTimeout(hub.measureTimeout)
+					res := moistureSensor.ReceiveWithTimeout(hub.measureTimeout)
 					if res == nil {
 						hub.errs <- ErrMoistureReadTimedOut
 
+						hub.measureLock.Unlock()
+
 						return
 					}
 
-					if err := gateway.ForwardTemperatureMeasurement(ctx, roomID, int(float32(binary.BigEndian.Uint32(res.Data[0:4]))/100.0), hub.defaultTemperature); err != nil {
+					hub.measureLock.Unlock()
+
+					if err := gateway.ForwardMoistureMeasurement(ctx, plantID, int(float32(binary.BigEndian.Uint32(res.Data[0:4]))/100.0), hub.defaultMoisture); err != nil {
 						hub.errs <- err
 
 						return
@@ -214,7 +237,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 					time.Sleep(hub.measureInterval)
 				}
 			}
-		}(roomID, moistureSensors)
+		}(plantID, moistureSensor)
 	}
 
 	return nil
