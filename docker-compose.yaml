@@ -1,0 +1,45 @@
+version: "3.8"
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    environment:
+      LADDR: :1337
+      VERBOSE: "true"
+      AWS_KEY: ./crypto/aws.key
+      AWS_CERT: ./crypto/aws.crt
+      AWS_CA: ./crypto/aws-ca.pem
+      ENDPOINT: ssl://a1ya5rmdywas0n-ats.iot.eu-north-1.amazonaws.com:8883
+      THING_NAME: GreenGuardianGateway1
+    volumes:
+      - ./crypto:/crypto:Z
+    networks:
+      - gateway
+
+  hub:
+    build:
+      context: .
+      dockerfile: Dockerfile.hub
+    environment:
+      BAUD: 115200
+      RADDR: gateway:1337
+      VERBOSE: "true"
+      DEFAULT_TEMPERATURE: 25
+      DEFAULT_MOISTURE: 30
+      MEASURE_INTERVAL: 1s
+      MEASURE_TIMEOUT: 1s
+      FANS: '{"1": "/dev/ttyACM0"}'
+      TEMPERATURE_SENSORS: '{"1": "/dev/ttyACM0"}'
+      SPRINKLERS: '{"1": "/dev/ttyACM0"}'
+      MOISTURE_SENSORS: '{"1": "/dev/ttyACM0"}'
+      MOCK: "0"
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    depends_on:
+      - gateway
+    networks:
+      - gateway
+
+networks:
+  gateway:
