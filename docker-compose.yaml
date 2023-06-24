@@ -7,11 +7,11 @@ services:
     environment:
       LADDR: :1337
       VERBOSE: "true"
-      AWS_KEY: ./crypto/aws.key
-      AWS_CERT: ./crypto/aws.crt
-      AWS_CA: ./crypto/aws-ca.pem
-      ENDPOINT: ssl://a1ya5rmdywas0n-ats.iot.eu-north-1.amazonaws.com:8883
-      THING_NAME: GreenGuardianGateway1
+      AWS_KEY: ./crypto/key.pem
+      AWS_CERT: ./crypto/cert.pem
+      AWS_CA: ./crypto/ca.pem
+      ENDPOINT: ssl://ad218s2flbk57-ats.iot.eu-central-1.amazonaws.com:8883
+      THING_NAME: DEVICE-Device_1
     volumes:
       - ./crypto:/crypto:Z
     networks:

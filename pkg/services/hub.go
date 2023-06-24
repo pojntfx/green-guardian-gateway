@@ -150,6 +150,10 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 		return err
 	}
 
+	if err := gateway.RegisterSprinklers(ctx, roomIDs); err != nil {
+		return err
+	}
+
 	if hub.mock > 0 {
 		// When mocking, we treat all temperatures as the same
 		for roomID, temperatureSensor := range hub.temperatureSensors {
@@ -186,7 +190,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 
 							// Top right
 							case 'A':
-								if err := gateway.ForwardMoistureMeasurement(ctx, roomID, hub.defaultMoisture+hub.mock, hub.defaultMoisture); err != nil {
+								if err := gateway.ForwardMoistureMeasurement(ctx, roomID, hub.defaultMoisture-hub.mock, hub.defaultMoisture); err != nil {
 									hub.errs <- err
 
 									return
@@ -194,7 +198,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 
 							// Bottom right
 							case 'X':
-								if err := gateway.ForwardMoistureMeasurement(ctx, roomID, hub.defaultMoisture-hub.mock, hub.defaultMoisture); err != nil {
+								if err := gateway.ForwardMoistureMeasurement(ctx, roomID, hub.defaultMoisture+hub.mock, hub.defaultMoisture); err != nil {
 									hub.errs <- err
 
 									return
@@ -253,10 +257,6 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 				}
 			}
 		}(roomID, temperatureSensor)
-	}
-
-	if err := gateway.RegisterSprinklers(ctx, roomIDs); err != nil {
-		return err
 	}
 
 	for plantID, moistureSensor := range hub.moistureSensors {

@@ -28,11 +28,11 @@ func main() {
 
 	laddr := flag.String("laddr", uutils.GetStringEnvOrDefault("LADDR", ":1337"), "Listen address")
 	verbose := flag.Bool("verbose", uutils.GetBoolEnvOrDefault("VERBOSE", false), "Whether to enable verbose logging")
-	awsKey := flag.String("aws-key", uutils.GetStringEnvOrDefault("AWS_KEY", filepath.Join(crypto, "aws.key")), "AWS mTLS secret key")
-	awsCert := flag.String("aws-cert", uutils.GetStringEnvOrDefault("AWS_CERT", filepath.Join(crypto, "aws.crt")), "AWS mTLS certificate")
-	awsCA := flag.String("aws-ca", uutils.GetStringEnvOrDefault("AWS_CA", filepath.Join(crypto, "aws-ca.pem")), "AWS mTLS CA")
-	endpoint := flag.String("endpoint", uutils.GetStringEnvOrDefault("ENDPOINT", "ssl://a1ya5rmdywas0n-ats.iot.eu-north-1.amazonaws.com:8883"), "AWS MQTT endpoint to connect to")
-	thingName := flag.String("thing-name", uutils.GetStringEnvOrDefault("THING_NAME", "GreenGuardianGateway1"), "Thing name (for topic to publish too; invalid thing names are denied using the )")
+	awsKey := flag.String("aws-key", uutils.GetStringEnvOrDefault("AWS_KEY", filepath.Join(crypto, "key.pem")), "AWS mTLS secret key")
+	awsCert := flag.String("aws-cert", uutils.GetStringEnvOrDefault("AWS_CERT", filepath.Join(crypto, "cert.pem")), "AWS mTLS certificate")
+	awsCA := flag.String("aws-ca", uutils.GetStringEnvOrDefault("AWS_CA", filepath.Join(crypto, "ca.pem")), "AWS mTLS CA")
+	endpoint := flag.String("endpoint", uutils.GetStringEnvOrDefault("ENDPOINT", "ssl://ad218s2flbk57-ats.iot.eu-central-1.amazonaws.com:8883"), "AWS MQTT endpoint to connect to")
+	thingName := flag.String("thing-name", uutils.GetStringEnvOrDefault("THING_NAME", "DEVICE-Device_1"), "Thing name (for topic to publish too; invalid thing names are denied using the )")
 
 	flag.Parse()
 

@@ -37,14 +37,14 @@ aws iot create-policy --policy-name 'GreenGuardianGateway' --policy-document "$(
 EOF
 )"
 
-aws iot create-thing --thing-name 'GreenGuardianGateway1'
+aws iot create-thing --thing-name 'DEVICE-Device_1'
 
-aws iot create-keys-and-certificate --set-as-active --certificate-pem-outfile 'crypto/aws.crt' --private-key-outfile 'crypto/aws.key'
+aws iot create-keys-and-certificate --set-as-active --certificate-pem-outfile 'crypto/cert.pem' --private-key-outfile 'crypto/key.pem'
 
 aws iot attach-policy --policy-name 'GreenGuardianGateway' --target 'arn:aws:iot:eu-north-1:856591169022:cert/feba75e6868feeed83897eb322b8b47ab656fc2a6c761b66bebbac60e312d2ae'
-aws iot attach-thing-principal --thing-name 'GreenGuardianGateway1' --principal 'arn:aws:iot:eu-north-1:856591169022:cert/feba75e6868feeed83897eb322b8b47ab656fc2a6c761b66bebbac60e312d2ae'
+aws iot attach-thing-principal --thing-name 'DEVICE-Device_1' --principal 'arn:aws:iot:eu-north-1:856591169022:cert/feba75e6868feeed83897eb322b8b47ab656fc2a6c761b66bebbac60e312d2ae'
 
-curl 'https://www.amazontrust.com/repository/AmazonRootCA1.pem' > 'crypto/aws-ca.pem'
+curl 'https://www.amazontrust.com/repository/AmazonRootCA1.pem' > 'crypto/ca.pem'
 
 aws iot describe-endpoint --endpoint-type iot:Data-ATS
 ```
