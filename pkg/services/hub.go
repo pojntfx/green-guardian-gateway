@@ -146,12 +146,16 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 		roomIDs = append(roomIDs, roomID)
 	}
 
-	if err := gateway.RegisterFans(ctx, roomIDs); err != nil {
-		return err
+	if len(hub.fans) > 0 {
+		if err := gateway.RegisterFans(ctx, roomIDs); err != nil {
+			return err
+		}
 	}
 
-	if err := gateway.RegisterSprinklers(ctx, roomIDs); err != nil {
-		return err
+	if len(hub.sprinklers) > 0 {
+		if err := gateway.RegisterSprinklers(ctx, roomIDs); err != nil {
+			return err
+		}
 	}
 
 	if hub.mock > 0 {
