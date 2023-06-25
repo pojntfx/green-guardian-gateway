@@ -1,0 +1,69 @@
+title GreenGuardian Protocol
+
+participant "Temperature Sensor" as ts
+participant "Fan" as fan
+
+participant "Moisture Sensor" as ms
+participant "Sprinkler" as s
+
+participant "Hub" as hub
+
+participant "Gateway" as gw
+
+participant "AWS IoT Core" as mqtt
+
+group Registration
+hub -> gw: tcp+dudirekta:\/\/RegisterFans(roomIDs []string) error)
+hub -> gw: tcp+dudirekta:\/\/RegisterSprinklers(plantIDs []string) error)
+end
+
+loop Async Temperature Measurement
+hub --> ts: serial:\/\/TempReq
+ts --> hub: serial:\/\/TempRes
+
+hub -> gw: tcp+dudirekta:\/\/ForwardTemperatureMeasurement(roomID string, measurement, defaultValue int) error)
+
+gw --> mqtt: tls+mqtt:\/\/\/gateways/<gatewayID>/rooms/<roomID>/temperature(measurement, default int)
+end
+
+group Fan Actions
+mqtt --> gw: tls+mqtt:\/\/\/gateways/<gatewayID>/rooms/<roomID>/fan(on bool)
+
+gw -> hub: tcp+dudirekta:\/\/SetFanOn(roomID string, on bool) error)
+
+hub --> fan: serial:\/\/MessageTypeRGBLED(255, 0, 255, 0)
+
+mqtt --> gw: tls+mqtt:\/\/\/gateways/<gatewayID>/rooms/<roomID>/fan(on bool)
+
+gw -> hub: tcp+dudirekta:\/\/SetFanOn(roomID string, on bool) error)
+
+hub --> fan: serial:\/\/MessageTypeRGBLED(0, 0, 255, 0)
+end
+
+loop Async Moisture Measurement
+hub --> ms: serial:\/\/MoistReq
+ms --> hub: serial:\/\/MoistRes
+
+hub -> gw: tcp+dudirekta:\/\/ForwardMoistureMeasurement(roomID string, measurement, defaultValue int) error)
+
+gw --> mqtt: tls+mqtt:\/\/\/gateways/<gatewayID>/plants/<plantID>/moisture(measurement, default int)
+end
+
+group Sprinkler Actions
+mqtt --> gw: tls+mqtt:\/\/\/gateways/<gatewayID>/plants/<plantD>/sprinkler(on bool)
+
+gw -> hub:tcp+dudirekta:\/\/SetSprinklerOn(plantID string, on bool) error)
+
+hub --> s: serial:\/\/MessageTypeRGBLED(255, 255, 0, 0)
+
+mqtt --> gw: tls+mqtt:\/\/\/gateways/<gatewayID>/plants/<plantID>/sprinkler(on bool)
+
+gw -> hub:tcp+dudirekta:\/\/SetSprinklerOn(plantID string, on bool) error)
+
+hub --> s: serial:\/\/MessageTypeRGBLED(0, 255, 0, 0)
+end
+
+group Unregistration
+hub -> gw: tcp+dudirekta:\/\/UnregisterFans(roomIDs []string) error)
+hub -> gw: tcp+dudirekta:\/\/UnregisterSprinklers(plantIDs []string) error)
+end
