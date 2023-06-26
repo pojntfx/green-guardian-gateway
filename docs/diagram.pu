@@ -11,7 +11,8 @@ participant "Hub" as hub
 participant "Gateway" as gw
 
 participant "AWS IoT Core" as mqtt
-
+participant "AWS IoT Events" as events
+participant "AWS SNS" as sns
 group Registration
 hub -> gw: tcp+dudirekta:\/\/RegisterFans(roomIDs []string) error)
 hub -> gw: tcp+dudirekta:\/\/RegisterSprinklers(plantIDs []string) error)
@@ -24,6 +25,11 @@ ts --> hub: serial:\/\/TempRes
 hub -> gw: tcp+dudirekta:\/\/ForwardTemperatureMeasurement(roomID string, measurement, defaultValue int) error)
 
 gw --> mqtt: tls+mqtt:\/\/\/gateways/<gatewayID>/rooms/<roomID>/temperature(measurement, default int)
+end
+
+group Temperature State Machine
+mqtt-->events:Event(identifier String, gatewayId String, roomId String, measurement int, default int)
+events --> mqtt: tls+mqtt:\/\/\/gateways/<gatewayID>/rooms/<roomID>/fan(on bool)
 end
 
 group Fan Actions
@@ -40,6 +46,7 @@ gw -> hub: tcp+dudirekta:\/\/SetFanOn(roomID string, on bool) error)
 hub --> fan: serial:\/\/MessageTypeRGBLED(0, 0, 255, 0)
 end
 
+
 loop Async Moisture Measurement
 hub --> ms: serial:\/\/MoistReq
 ms --> hub: serial:\/\/MoistRes
@@ -47,6 +54,16 @@ ms --> hub: serial:\/\/MoistRes
 hub -> gw: tcp+dudirekta:\/\/ForwardMoistureMeasurement(roomID string, measurement, defaultValue int) error)
 
 gw --> mqtt: tls+mqtt:\/\/\/gateways/<gatewayID>/plants/<plantID>/moisture(measurement, default int)
+end
+
+group Moisture State Machine
+mqtt-->events:Event(identifier String, gatewayId String, plantId String, measurement int, default int)
+
+events --> mqtt: tls+mqtt:\/\/\/gateways/<gatewayID>/plants/<plantID>/sprinkler(on bool)
+
+events-->events:Event(gatewayId String, status int)
+
+events-->sns:http://("Something seems off with your watersupply, please check.")
 end
 
 group Sprinkler Actions
