@@ -60,3 +60,24 @@ go run ./cmd/green-guardian-gateway/ --verbose
 # Be sure to plug in the IoT device beforeahand and consult `--help`
 go build -o /tmp/green-guardian-hub ./cmd/green-guardian-hub/ && sudo /tmp/green-guardian-hub --verbose
 ```
+
+## In-Person Demo
+
+First, open [Cloudwatch](<https://eu-central-1.console.aws.amazon.com/cloudwatch/home?region=eu-central-1#logsV2:live-tail$3FlogGroupArns$3D~(~'arn*3aaws*3alogs*3aeu-central-1*3a097504859454*3alog-group*3aAWSIotLogsV2*3a*2a)>)
+
+```shell
+# Jumphost
+export IP="49.13.2.195"
+ssh -R 1337:localhost:1337 root@${IP}
+
+# Gateway
+ENDPOINT=ssl://ad218s2flbk57-ats.iot.eu-central-1.amazonaws.com:8883 THING_NAME=barn-tiger-ladle go run ./cmd/green-guardian-gateway/ --verbose
+
+# Sensors (real)
+export IP="49.13.2.195"
+go build -o /tmp/green-guardian-hub ./cmd/green-guardian-hub/ && sudo /tmp/green-guardian-hub --verbose --raddr ${IP}:1337 --sprinklers='{}' --fans='{}' # --mock=50
+
+# Actuators (mock)
+export IP="49.13.2.195"
+go build -o /tmp/green-guardian-hub ./cmd/green-guardian-hub/ && sudo /tmp/green-guardian-hub --verbose --raddr ${IP}:1337 --temperature-sensors='{}' --moisture-sensors='{}' --mock=50
+```
