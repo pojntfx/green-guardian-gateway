@@ -77,7 +77,7 @@ func main() {
 		panic(err)
 	}
 
-	fanBindings := map[string]*iotee.IoTee{}
+	fanBindings := map[string]uutils.IoTee{}
 	for roomID, dev := range fanDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -86,7 +86,7 @@ func main() {
 		}
 		defer it.Close()
 
-		fanBindings[roomID] = it
+		fanBindings[roomID] = uutils.NewIoTeeAdapter(it)
 	}
 
 	temperatureSensorDevices := map[string]string{}
@@ -94,7 +94,7 @@ func main() {
 		panic(err)
 	}
 
-	temperatureSensorBindings := map[string]*iotee.IoTee{}
+	temperatureSensorBindings := map[string]uutils.IoTee{}
 	for roomID, dev := range temperatureSensorDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -103,7 +103,7 @@ func main() {
 		}
 		defer it.Close()
 
-		temperatureSensorBindings[roomID] = it
+		temperatureSensorBindings[roomID] = uutils.NewIoTeeAdapter(it)
 	}
 
 	sprinklerDevices := map[string]string{}
@@ -111,7 +111,7 @@ func main() {
 		panic(err)
 	}
 
-	sprinklerBindings := map[string]*iotee.IoTee{}
+	sprinklerBindings := map[string]uutils.IoTee{}
 	for roomID, dev := range fanDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -120,7 +120,7 @@ func main() {
 		}
 		defer it.Close()
 
-		sprinklerBindings[roomID] = it
+		sprinklerBindings[roomID] = uutils.NewIoTeeAdapter(it)
 	}
 
 	moistureSensorDevices := map[string]string{}
@@ -128,7 +128,7 @@ func main() {
 		panic(err)
 	}
 
-	moistureSensorBindings := map[string]*iotee.IoTee{}
+	moistureSensorBindings := map[string]uutils.IoTee{}
 	for roomID, dev := range moistureSensorDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -137,7 +137,7 @@ func main() {
 		}
 		defer it.Close()
 
-		moistureSensorBindings[roomID] = it
+		moistureSensorBindings[roomID] = uutils.NewIoTeeAdapter(it)
 	}
 
 	hub := services.NewHub(

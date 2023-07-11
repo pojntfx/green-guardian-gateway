@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pojntfx/green-guardian-gateway/pkg/utils"
 	"gitlab.mi.hdm-stuttgart.de/iotee/go-iotee"
 )
 
@@ -32,13 +33,13 @@ type Hub struct {
 
 	errs chan error
 
-	fans               map[string]*iotee.IoTee
-	temperatureSensors map[string]*iotee.IoTee
+	fans               map[string]utils.IoTee
+	temperatureSensors map[string]utils.IoTee
 
 	defaultTemperature int
 
-	sprinklers      map[string]*iotee.IoTee
-	moistureSensors map[string]*iotee.IoTee
+	sprinklers      map[string]utils.IoTee
+	moistureSensors map[string]utils.IoTee
 
 	defaultMoisture int
 
@@ -56,12 +57,12 @@ func NewHub(
 	verbose bool,
 	ctx context.Context,
 
-	fans map[string]*iotee.IoTee,
-	temperatureSensors map[string]*iotee.IoTee,
+	fans map[string]utils.IoTee,
+	temperatureSensors map[string]utils.IoTee,
 	defaultTemperature int,
 
-	sprinklers map[string]*iotee.IoTee,
-	moistureSensors map[string]*iotee.IoTee,
+	sprinklers map[string]utils.IoTee,
+	moistureSensors map[string]utils.IoTee,
 	defaultMoisture int,
 
 	measureInterval,
@@ -165,7 +166,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 
 			go temperatureSensor.RxPump()
 
-			go func(roomID string, temperatureSensor *iotee.IoTee) {
+			go func(roomID string, temperatureSensor utils.IoTee) {
 				defer hub.workerWg.Done()
 
 				for {
@@ -173,7 +174,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 					case <-hub.ctx.Done():
 						return
 
-					case msg := <-temperatureSensor.RxChan:
+					case msg := <-temperatureSensor.RxChan():
 						if msg.MsgType == iotee.MessageTypeButton {
 							switch msg.Data[0] {
 							// Top left
@@ -220,7 +221,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 	for roomID, temperatureSensor := range hub.temperatureSensors {
 		hub.workerWg.Add(1)
 
-		go func(roomID string, temperatureSensor *iotee.IoTee) {
+		go func(roomID string, temperatureSensor utils.IoTee) {
 			defer hub.workerWg.Done()
 
 			for {
@@ -266,7 +267,7 @@ func OpenHub(hub *Hub, ctx context.Context, gateway *GatewayRemote) error {
 	for plantID, moistureSensor := range hub.moistureSensors {
 		hub.workerWg.Add(1)
 
-		go func(plantID string, moistureSensor *iotee.IoTee) {
+		go func(plantID string, moistureSensor utils.IoTee) {
 			defer hub.workerWg.Done()
 
 			for {
