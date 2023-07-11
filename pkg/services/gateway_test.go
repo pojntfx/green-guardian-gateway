@@ -11,6 +11,9 @@ import (
 	"github.com/pojntfx/dudirekta/pkg/rpc"
 )
 
+// TestRegisterFans is a testing function that checks if the fans associated
+// with given IDs are registered properly.
+// Registration errors and issues with assigned IDs are reported as test failures.
 func TestRegisterFans(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 
@@ -28,6 +31,9 @@ func TestRegisterFans(t *testing.T) {
 	}
 }
 
+// TestUnregisterFans is a function that tests the unregistration of fans,
+// ensuring that the fans with the given IDs can be successfully unregistered.
+// In case a fan ID is not unregistered properly, a test failure occurs.
 func TestUnregisterFans(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 
@@ -49,6 +55,10 @@ func TestUnregisterFans(t *testing.T) {
 	}
 }
 
+// TestRegisterSprinklers is a function designed to test the registration
+// of sprinklers by ID.
+// Potential registration errors and issues with the assigned IDs
+// result in a test failure.
 func TestRegisterSprinklers(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 	gateway := NewGateway(false, ctx, nil, "TestThing")
@@ -65,6 +75,9 @@ func TestRegisterSprinklers(t *testing.T) {
 	}
 }
 
+// TestUnregisterSprinklers function tests server functionality for unregistering
+// sprinklers based on given IDs.
+// Fails the test if any sprinkler ID wasn't unregistered properly.
 func TestUnregisterSprinklers(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 	gateway := NewGateway(false, ctx, nil, "TestThing")
@@ -85,6 +98,10 @@ func TestUnregisterSprinklers(t *testing.T) {
 	}
 }
 
+// TestForwardTemperatureMeasurement is a function that tests the ability
+// of the gateway to forward temperature measurements.
+// If there is an issue with forwarding the temperature measurement
+// to the respective room, the test case fails.
 func TestForwardTemperatureMeasurement(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 
@@ -114,6 +131,10 @@ func TestForwardTemperatureMeasurement(t *testing.T) {
 	}
 }
 
+// TestForwardMoistureMeasurement tests if the gateway is capable of
+// forwarding the moisture measurement to the respective plant.
+// If there is any error during the forwarding of moisture measurement,
+// a test failure is reported.
 func TestForwardMoistureMeasurement(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 

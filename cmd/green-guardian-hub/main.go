@@ -23,6 +23,7 @@ var (
 )
 
 func main() {
+	// Define variables to get environment values or default ones if environment variables are not set
 	baudDefault, err := uutils.GetIntEnvOrDefault("BAUD", 115200)
 	if err != nil {
 		panic(err)
@@ -56,27 +57,33 @@ func main() {
 	}
 	measureTimeout := flag.Duration("measure-timeout", measureTimeoutDefault, "Amount of time after which it is assumed that a measurement has failed")
 
+	// Define a JSON structure for each peripheral device
 	fans := flag.String("fans", uutils.GetStringEnvOrDefault("FANS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
 	temperatureSensors := flag.String("temperature-sensors", uutils.GetStringEnvOrDefault("TEMPERATURE_SENSORS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
 	sprinklers := flag.String("sprinklers", uutils.GetStringEnvOrDefault("SPRINKLERS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { plantID: devicePath }")
 	moistureSensors := flag.String("moisture-sensors", uutils.GetStringEnvOrDefault("MOISTURE_SENSORS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
 
+	// Mock for development and testing purposes
 	mockDefault, err := uutils.GetIntEnvOrDefault("MOCK", 0)
 	if err != nil {
 		panic(err)
 	}
 	mock := flag.Int("mock", mockDefault, "If set to >1, mock temperature and moisture using buttons, sending the default value +- the value of this flag")
 
+	// Parse command line flags
 	flag.Parse()
 
+	// Cancelable context for managing long-running go routines
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Declare a map to hold fan devices, then unmarshal JSON into this map
 	fanDevices := map[string]string{}
 	if err := json.Unmarshal([]byte(*fans), &fanDevices); err != nil {
 		panic(err)
 	}
 
+	// Open connections for each fan device and store them in a map
 	fanBindings := map[string]uutils.IoTee{}
 	for roomID, dev := range fanDevices {
 		it := iotee.NewIoTee(dev, *baud)
@@ -89,6 +96,7 @@ func main() {
 		fanBindings[roomID] = uutils.NewIoTeeAdapter(it)
 	}
 
+	// Similarly for temperature sensors, sprinklers and moisture sensors
 	temperatureSensorDevices := map[string]string{}
 	if err := json.Unmarshal([]byte(*temperatureSensors), &temperatureSensorDevices); err != nil {
 		panic(err)
@@ -140,6 +148,7 @@ func main() {
 		moistureSensorBindings[roomID] = uutils.NewIoTeeAdapter(it)
 	}
 
+	// Initialization of hub, the main service that communicates with sensors/actuators
 	hub := services.NewHub(
 		*verbose,
 		ctx,
@@ -158,6 +167,7 @@ func main() {
 		*mock,
 	)
 
+	// Registry where every connected device is registered
 	ready := make(chan struct{})
 	registry := rpc.NewRegistry(
 		hub,
@@ -173,12 +183,14 @@ func main() {
 		},
 	)
 
+	// Dial remote address
 	conn, err := net.Dial("tcp", *raddr)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 
+	// Link RPCs and check for errors
 	go func() {
 		if err := registry.Link(conn); err != nil {
 			if !utils.IsClosedErr(err) {
@@ -187,10 +199,12 @@ func main() {
 		}
 	}()
 
+	// Wait for connection
 	<-ready
 
 	log.Println("Connected to", conn.RemoteAddr())
 
+	// Find the first peer
 	var peer *services.GatewayRemote
 	for _, candidate := range registry.Peers() {
 		peer = &candidate
@@ -202,6 +216,7 @@ func main() {
 		panic(errNoPeerFound)
 	}
 
+	// Error channel to handle errors in Go routines
 	errs := make(chan error)
 	go func() {
 		if err := services.WaitHub(hub); err != nil {
@@ -213,6 +228,7 @@ func main() {
 		panic(err)
 	}
 
+	// Handling interrupt signal for shutdown
 	go func() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, os.Interrupt)
@@ -239,6 +255,7 @@ func main() {
 		os.Exit(1)
 	}()
 
+	// Error handling loop
 	for err := range errs {
 		if err != nil {
 			panic(err)

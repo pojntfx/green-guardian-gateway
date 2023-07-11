@@ -12,6 +12,10 @@ import (
 
 //go:generate mockgen --destination hub_mocks.go --package services --build_flags=--mod=mod github.com/pojntfx/green-guardian-gateway/pkg/utils IoTee
 
+// TestSetFanOn is a function for testing the SetFanOn method of the NewHub struct.
+// Context is assigned with a remoteID.
+// A mockFan is created and expected to transmit data to a room's fan.
+// If the fan fails to turn on, the test fails.
 func TestSetFanOn(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 
@@ -37,6 +41,10 @@ func TestSetFanOn(t *testing.T) {
 	}
 }
 
+// TestSetSprinklerOn is a testing function for the SetSprinklerOn method of the NewHub struct.
+// Context is assigned with a remoteID.
+// A mockSprinkler is created and expected to transmit data to a plant sprinkler.
+// If the sprinkler fails to turn on, the test fails.
 func TestSetSprinklerOn(t *testing.T) {
 	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
 
