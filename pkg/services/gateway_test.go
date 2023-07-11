@@ -113,3 +113,32 @@ func TestForwardTemperatureMeasurement(t *testing.T) {
 		t.Fatalf("unexpected error during ForwardTemperatureMeasurement: %v", err)
 	}
 }
+
+func TestForwardMoistureMeasurement(t *testing.T) {
+	ctx := context.WithValue(context.Background(), rpc.RemoteIDContextKey, "testremote")
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockBroker := NewMockClient(ctrl)
+	mockToken := NewMockToken(ctrl)
+
+	mockToken.EXPECT().Wait().Return(true)
+	mockToken.EXPECT().Error().Return(nil)
+
+	gateway := NewGateway(false, ctx, mockBroker, "TestThing")
+	plantID := "Plant1"
+	measurement := 35
+	defaultValue := 30
+
+	mockBroker.EXPECT().Publish(
+		path.Join("/gateways", gateway.thingName, "plants", plantID, "moisture"),
+		byte(0),
+		false,
+		gomock.Any(),
+	).Return(mockToken).Times(1)
+
+	if err := gateway.ForwardMoistureMeasurement(ctx, plantID, measurement, defaultValue); err != nil {
+		t.Fatalf("unexpected error during ForwardMoistureMeasurement: %v", err)
+	}
+}
