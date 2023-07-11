@@ -45,4 +45,6 @@ clean:
 
 # Dependencies
 depend:
-	true
+	go install github.com/golang/mock/mockgen@latest
+
+	go generate ./...

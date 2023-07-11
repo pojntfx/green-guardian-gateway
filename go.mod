@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.4.3
+	github.com/golang/mock v1.6.0
 	github.com/pojntfx/dudirekta v0.5.1
 	github.com/pojntfx/r3map v0.0.0-20230702125402-aa6d3def2dc8
 	gitlab.mi.hdm-stuttgart.de/iotee/go-iotee v0.9.0

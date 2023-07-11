@@ -5,6 +5,8 @@ FROM golang:bullseye AS build
 RUN mkdir -p /data
 WORKDIR /data
 COPY . .
+
+# Generate dependencies
 RUN make depend
 
 # Run tests
