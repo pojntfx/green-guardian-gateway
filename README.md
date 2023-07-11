@@ -1,5 +1,7 @@
 # GreenGuardian Gateway
 
+![Logo](./docs/logo-readme.png)
+
 AWS IoT Gateway for GreenGuardian, a uni project for the HdM IoT course.
 
 [![hydrun CI](https://github.com/pojntfx/green-guardian-gateway/actions/workflows/hydrun.yaml/badge.svg)](https://github.com/pojntfx/green-guardian-gateway/actions/workflows/hydrun.yaml)
