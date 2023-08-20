@@ -13,8 +13,7 @@ import (
 
 	"github.com/pojntfx/dudirekta/pkg/rpc"
 	"github.com/pojntfx/green-guardian-gateway/pkg/services"
-	uutils "github.com/pojntfx/green-guardian-gateway/pkg/utils"
-	"github.com/pojntfx/r3map/pkg/utils"
+	"github.com/pojntfx/green-guardian-gateway/pkg/utils"
 	"gitlab.mi.hdm-stuttgart.de/iotee/go-iotee"
 )
 
@@ -24,47 +23,47 @@ var (
 
 func main() {
 	// Define variables to get environment values or default ones if environment variables are not set
-	baudDefault, err := uutils.GetIntEnvOrDefault("BAUD", 115200)
+	baudDefault, err := utils.GetIntEnvOrDefault("BAUD", 115200)
 	if err != nil {
 		panic(err)
 	}
 	baud := flag.Int("baud", baudDefault, "Baudrate to use to communicate with sensors and actuators")
 
-	raddr := flag.String("raddr", uutils.GetStringEnvOrDefault("RADDR", "localhost:1337"), "Remote address")
-	verbose := flag.Bool("verbose", uutils.GetBoolEnvOrDefault("VERBOSE", false), "Whether to enable verbose logging")
+	raddr := flag.String("raddr", utils.GetStringEnvOrDefault("RADDR", "localhost:1337"), "Remote address")
+	verbose := flag.Bool("verbose", utils.GetBoolEnvOrDefault("VERBOSE", false), "Whether to enable verbose logging")
 
-	defaultTempDefault, err := uutils.GetIntEnvOrDefault("DEFAULT_TEMPERATURE", 25)
+	defaultTempDefault, err := utils.GetIntEnvOrDefault("DEFAULT_TEMPERATURE", 25)
 	if err != nil {
 		panic(err)
 	}
 	defaultTemperature := flag.Int("default-temperature", defaultTempDefault, "The default expected temperature")
 
-	defaultMoistureDefault, err := uutils.GetIntEnvOrDefault("DEFAULT_MOISTURE", 30)
+	defaultMoistureDefault, err := utils.GetIntEnvOrDefault("DEFAULT_MOISTURE", 30)
 	if err != nil {
 		panic(err)
 	}
 	defaultMoisture := flag.Int("default-moisture", defaultMoistureDefault, "The default expected moisture")
 
-	measureIntervalDefault, err := uutils.GetDurationEnvOrDefault("MEASURE_INTERVAL", time.Second)
+	measureIntervalDefault, err := utils.GetDurationEnvOrDefault("MEASURE_INTERVAL", time.Second)
 	if err != nil {
 		panic(err)
 	}
 	measureInterval := flag.Duration("measure-interval", measureIntervalDefault, "Amount of time after which a new measurement is taken")
 
-	measureTimeoutDefault, err := uutils.GetDurationEnvOrDefault("MEASURE_TIMEOUT", time.Second)
+	measureTimeoutDefault, err := utils.GetDurationEnvOrDefault("MEASURE_TIMEOUT", time.Second)
 	if err != nil {
 		panic(err)
 	}
 	measureTimeout := flag.Duration("measure-timeout", measureTimeoutDefault, "Amount of time after which it is assumed that a measurement has failed")
 
 	// Define a JSON structure for each peripheral device
-	fans := flag.String("fans", uutils.GetStringEnvOrDefault("FANS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
-	temperatureSensors := flag.String("temperature-sensors", uutils.GetStringEnvOrDefault("TEMPERATURE_SENSORS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
-	sprinklers := flag.String("sprinklers", uutils.GetStringEnvOrDefault("SPRINKLERS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { plantID: devicePath }")
-	moistureSensors := flag.String("moisture-sensors", uutils.GetStringEnvOrDefault("MOISTURE_SENSORS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
+	fans := flag.String("fans", utils.GetStringEnvOrDefault("FANS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
+	temperatureSensors := flag.String("temperature-sensors", utils.GetStringEnvOrDefault("TEMPERATURE_SENSORS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
+	sprinklers := flag.String("sprinklers", utils.GetStringEnvOrDefault("SPRINKLERS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { plantID: devicePath }")
+	moistureSensors := flag.String("moisture-sensors", utils.GetStringEnvOrDefault("MOISTURE_SENSORS", `{"1": "/dev/ttyACM0"}`), "JSON description in the format { roomID: devicePath }")
 
 	// Mock for development and testing purposes
-	mockDefault, err := uutils.GetIntEnvOrDefault("MOCK", 0)
+	mockDefault, err := utils.GetIntEnvOrDefault("MOCK", 0)
 	if err != nil {
 		panic(err)
 	}
@@ -84,7 +83,7 @@ func main() {
 	}
 
 	// Open connections for each fan device and store them in a map
-	fanBindings := map[string]uutils.IoTee{}
+	fanBindings := map[string]utils.IoTee{}
 	for roomID, dev := range fanDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -93,7 +92,7 @@ func main() {
 		}
 		defer it.Close()
 
-		fanBindings[roomID] = uutils.NewIoTeeAdapter(it)
+		fanBindings[roomID] = utils.NewIoTeeAdapter(it)
 	}
 
 	// Similarly for temperature sensors, sprinklers and moisture sensors
@@ -102,7 +101,7 @@ func main() {
 		panic(err)
 	}
 
-	temperatureSensorBindings := map[string]uutils.IoTee{}
+	temperatureSensorBindings := map[string]utils.IoTee{}
 	for roomID, dev := range temperatureSensorDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -111,7 +110,7 @@ func main() {
 		}
 		defer it.Close()
 
-		temperatureSensorBindings[roomID] = uutils.NewIoTeeAdapter(it)
+		temperatureSensorBindings[roomID] = utils.NewIoTeeAdapter(it)
 	}
 
 	sprinklerDevices := map[string]string{}
@@ -119,7 +118,7 @@ func main() {
 		panic(err)
 	}
 
-	sprinklerBindings := map[string]uutils.IoTee{}
+	sprinklerBindings := map[string]utils.IoTee{}
 	for roomID, dev := range fanDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -128,7 +127,7 @@ func main() {
 		}
 		defer it.Close()
 
-		sprinklerBindings[roomID] = uutils.NewIoTeeAdapter(it)
+		sprinklerBindings[roomID] = utils.NewIoTeeAdapter(it)
 	}
 
 	moistureSensorDevices := map[string]string{}
@@ -136,7 +135,7 @@ func main() {
 		panic(err)
 	}
 
-	moistureSensorBindings := map[string]uutils.IoTee{}
+	moistureSensorBindings := map[string]utils.IoTee{}
 	for roomID, dev := range moistureSensorDevices {
 		it := iotee.NewIoTee(dev, *baud)
 
@@ -145,7 +144,7 @@ func main() {
 		}
 		defer it.Close()
 
-		moistureSensorBindings[roomID] = uutils.NewIoTeeAdapter(it)
+		moistureSensorBindings[roomID] = utils.NewIoTeeAdapter(it)
 	}
 
 	// Initialization of hub, the main service that communicates with sensors/actuators

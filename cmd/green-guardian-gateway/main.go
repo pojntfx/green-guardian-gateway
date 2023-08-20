@@ -14,8 +14,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pojntfx/dudirekta/pkg/rpc"
 	"github.com/pojntfx/green-guardian-gateway/pkg/services"
-	uutils "github.com/pojntfx/green-guardian-gateway/pkg/utils"
-	"github.com/pojntfx/r3map/pkg/utils"
+	"github.com/pojntfx/green-guardian-gateway/pkg/utils"
 )
 
 func main() {
@@ -31,17 +30,17 @@ func main() {
 	// Use command line flags to allow customization of certain parameters
 	// For each setting, if not provided in command-line args, defaults are taken from environment variables.
 	// Otherwise, a default value is used.
-	laddr := flag.String("laddr", uutils.GetStringEnvOrDefault("LADDR", ":1337"), "Listen address")
-	verbose := flag.Bool("verbose", uutils.GetBoolEnvOrDefault("VERBOSE", false), "Whether to enable verbose logging")
+	laddr := flag.String("laddr", utils.GetStringEnvOrDefault("LADDR", ":1337"), "Listen address")
+	verbose := flag.Bool("verbose", utils.GetBoolEnvOrDefault("VERBOSE", false), "Whether to enable verbose logging")
 
 	// Define AWS key, cert and ca location or path
-	awsKey := flag.String("aws-key", uutils.GetStringEnvOrDefault("AWS_KEY", filepath.Join(crypto, "key.pem")), "AWS mTLS secret key")
-	awsCert := flag.String("aws-cert", uutils.GetStringEnvOrDefault("AWS_CERT", filepath.Join(crypto, "cert.pem")), "AWS mTLS certificate")
-	awsCA := flag.String("aws-ca", uutils.GetStringEnvOrDefault("AWS_CA", filepath.Join(crypto, "ca.pem")), "AWS mTLS CA")
+	awsKey := flag.String("aws-key", utils.GetStringEnvOrDefault("AWS_KEY", filepath.Join(crypto, "key.pem")), "AWS mTLS secret key")
+	awsCert := flag.String("aws-cert", utils.GetStringEnvOrDefault("AWS_CERT", filepath.Join(crypto, "cert.pem")), "AWS mTLS certificate")
+	awsCA := flag.String("aws-ca", utils.GetStringEnvOrDefault("AWS_CA", filepath.Join(crypto, "ca.pem")), "AWS mTLS CA")
 
 	// Define endpoint and thing name
-	endpoint := flag.String("endpoint", uutils.GetStringEnvOrDefault("ENDPOINT", "ssl://ad218s2flbk57-ats.iot.eu-central-1.amazonaws.com:8883"), "AWS MQTT endpoint to connect to")
-	thingName := flag.String("thing-name", uutils.GetStringEnvOrDefault("THING_NAME", "DEVICE-Device_1"), "Thing name (for topic to publish too; invalid thing names are denied using the )")
+	endpoint := flag.String("endpoint", utils.GetStringEnvOrDefault("ENDPOINT", "ssl://ad218s2flbk57-ats.iot.eu-central-1.amazonaws.com:8883"), "AWS MQTT endpoint to connect to")
+	thingName := flag.String("thing-name", utils.GetStringEnvOrDefault("THING_NAME", "DEVICE-Device_1"), "Thing name (for topic to publish too; invalid thing names are denied using the )")
 
 	// Parse all defined flags
 	flag.Parse()
